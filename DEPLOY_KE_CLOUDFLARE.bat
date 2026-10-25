@@ -12,7 +12,7 @@ echo Target Project: financeflow-pwa (Data Continuity Preserved)
 echo.
 
 call npm.cmd run build
-call npx.cmd wrangler pages deploy dist --project-name financeflow-pwa
+call npx.cmd wrangler pages deploy dist --project-name financeflow-pwa --branch myfinanceflow
 
 echo.
 echo ========================================================
