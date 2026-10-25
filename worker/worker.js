@@ -18,7 +18,7 @@ export default {
 
     // Handle browser health-check GET requests
     if (request.method !== 'POST') {
-      return new Response('FinanceFlow Telegram Relay Active. Awaiting webhooks.', {
+      return new Response('MyFinancialFlow V1.1 Telegram Relay Active. Awaiting webhooks.', {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'text/plain' },
       });
@@ -68,14 +68,14 @@ export default {
         createdAt: Date.now(),
       };
 
-      // 3. Relay raw payload into Google Drive appDataFolder queue or KV
+      // 3. Relay raw payload into Google Drive "MyFinancialFlow Data/raw_inbox_queue.json" or KV
       if (env.INBOX_KV) {
         await env.INBOX_KV.put(`inbox_${inboxPayload.id}`, JSON.stringify(inboxPayload), {
           expirationTtl: 86400 * 7, // 7 days retention
         });
       }
 
-      // If Google Access Token is provided, push directly to Drive raw_inbox_queue.json
+      // If Google Access Token is provided, push directly to visible Drive folder "MyFinancialFlow Data/raw_inbox_queue.json"
       if (env.GOOGLE_ACCESS_TOKEN) {
         await appendToGoogleDriveQueue(inboxPayload, env.GOOGLE_ACCESS_TOKEN);
       }
@@ -91,59 +91,108 @@ export default {
 };
 
 /**
- * Append raw queue item into Google Drive appDataFolder/raw_inbox_queue.json
+ * Append raw queue item into Google Drive visible folder "MyFinancialFlow Data/raw_inbox_queue.json"
+ * Complies with V1.1 drive.file visible folder architecture (no hidden appDataFolder).
  */
 async function appendToGoogleDriveQueue(item, accessToken) {
-  const searchUrl =
-    'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name=%27raw_inbox_queue.json%27&fields=files(id,name)';
-  const searchRes = await fetch(searchUrl, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  try {
+    const authHeaders = { Authorization: `Bearer ${accessToken}` };
+    const folderName = 'MyFinancialFlow Data';
+    const fileName = 'raw_inbox_queue.json';
 
-  if (!searchRes.ok) return;
-  const searchData = await searchRes.json();
-  const file = searchData.files?.[0];
+    // 1. Locate or create visible root folder "MyFinancialFlow Data"
+    const folderQuery = encodeURIComponent(
+      `mimeType = 'application/vnd.google-apps.folder' and name = '${folderName}' and trashed = false`
+    );
+    const folderRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${folderQuery}&fields=files(id,name)`,
+      { headers: authHeaders }
+    );
 
-  let queueItems = [];
+    if (!folderRes.ok) return;
+    const folderData = await folderRes.json();
+    let folderId = folderData.files?.[0]?.id;
 
-  if (file?.id) {
-    const dlRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (dlRes.ok) {
-      try {
-        queueItems = await dlRes.json();
-      } catch (_) {
-        queueItems = [];
+    if (!folderId) {
+      const createFolderRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: {
+          ...authHeaders,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: folderName,
+          mimeType: 'application/vnd.google-apps.folder',
+        }),
+      });
+      if (!createFolderRes.ok) return;
+      const createdFolder = await createFolderRes.json();
+      folderId = createdFolder.id;
+    }
+
+    if (!folderId) return;
+
+    // 2. Search for existing raw_inbox_queue.json inside "MyFinancialFlow Data"
+    const fileQuery = encodeURIComponent(
+      `'${folderId}' in parents and name = '${fileName}' and trashed = false`
+    );
+    const searchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${fileQuery}&fields=files(id,name)`,
+      { headers: authHeaders }
+    );
+
+    if (!searchRes.ok) return;
+    const searchData = await searchRes.json();
+    const file = searchData.files?.[0];
+
+    let queueItems = [];
+
+    if (file?.id) {
+      const dlRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
+        headers: authHeaders,
+      });
+      if (dlRes.ok) {
+        try {
+          queueItems = await dlRes.json();
+        } catch (_) {
+          queueItems = [];
+        }
       }
     }
-  }
 
-  queueItems.push(item);
+    if (!Array.isArray(queueItems)) {
+      queueItems = [];
+    }
 
-  const body = JSON.stringify(queueItems);
-  if (file?.id) {
-    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=media`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body,
-    });
-  } else {
-    const meta = {
-      name: 'raw_inbox_queue.json',
-      parents: ['appDataFolder'],
-    };
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
-    form.append('file', new Blob([body], { type: 'application/json' }));
+    queueItems.push(item);
 
-    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}` },
-      body: form,
-    });
+    const body = JSON.stringify(queueItems, null, 2);
+
+    if (file?.id) {
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=media`, {
+        method: 'PATCH',
+        headers: {
+          ...authHeaders,
+          'Content-Type': 'application/json',
+        },
+        body,
+      });
+    } else {
+      const meta = {
+        name: fileName,
+        parents: [folderId],
+      };
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+      form.append('file', new Blob([body], { type: 'application/json' }));
+
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: authHeaders,
+        body: form,
+      });
+    }
+  } catch (err) {
+    console.error('[appendToGoogleDriveQueue Error]', err);
   }
 }

@@ -179,7 +179,7 @@ export default {
 
       // Root landing info
       return new Response(
-        'FinanceFlow Telemetry Endpoint Active. POST technical errors to /report. GET /reports to review.',
+        'MyFinancialFlow V1.1 Telemetry Endpoint Active. POST technical errors to /report. GET /reports to review.',
         {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'text/plain' },

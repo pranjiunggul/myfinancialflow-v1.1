@@ -954,11 +954,89 @@ Berikut adalah koreksi faktual terhadap ruang lingkup modul pengujian yang telah
 
 ---
 
-## 9. Kesimpulan & Status Akhir
+## 9. Pembaruan & Redeployment Cloudflare Workers (Telemetry & Relay)
 
-Fase pengembangan **MyFinancialFlow V1.1** telah tuntas 100%:
+Menindaklanjuti audit independen Cloudflare connector terhadap kedua Cloudflare Worker aktif (`financeflow-telemetry` dan `financeflow-relay`):
+
+### 9.1 Perbaikan Branding & Jalur Google Drive Antrean Telegram
+1. **Pembaruan Teks Landing (Branding MyFinancialFlow V1.1):**
+   - Berkas `worker/crash-reporter.js` diperbarui: respons GET default kini menampilkan:  
+     `MyFinancialFlow V1.1 Telemetry Endpoint Active. POST technical errors to /report. GET /reports to review.`
+   - Berkas `worker/worker.js` dan `worker/telegram-relay.ts` diperbarui: respons GET default kini menampilkan:  
+     `MyFinancialFlow V1.1 Telegram Relay Active. Awaiting webhooks.`
+2. **Koreksi Arsitektur Google Drive pada Telegram Relay (`appendToGoogleDriveQueue`):**
+   - Menghapus query usang `spaces=appDataFolder` dan `parents: ['appDataFolder']`.
+   - Menggantinya dengan pencarian/pembuatan folder transparan `MyFinancialFlow Data` di Google Drive (sesuai scope `drive.file` V1.1).
+   - Menulis/memperbarui berkas antrean `raw_inbox_queue.json` di dalam folder `MyFinancialFlow Data/`, menjaga kompatibilitas penuh dengan mesin sinkronisasi V1.1 jika `GOOGLE_ACCESS_TOKEN` diaktifkan.
+
+### 9.2 Bukti Riil Deployment Cloudflare Workers
+
+#### A. Telemetry Worker (`financeflow-telemetry`)
+- **Version ID**: `d4e12da3-25f2-44f2-b6c4-05e37434b280`
+- **Waktu Deployment**: `2026-10-25T06:22:10.358Z`
+- **Endpoint**: `https://financeflow-telemetry.dhikaherlambang.workers.dev`
+
+Eksekusi curl:
+```bash
+curl.exe -i -s https://financeflow-telemetry.dhikaherlambang.workers.dev
+```
+
+Output Mentah:
+```http
+HTTP/1.1 200 OK
+Date: Sun, 25 Oct 2026 06:23:36 GMT
+Content-Type: text/plain
+Content-Length: 105
+Connection: keep-alive
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Content-Type, X-App-Version, Authorization, X-Telemetry-Auth
+Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=wbVJ7YOKTLUEj9nbE5KdMJATqwdTefzjxZi75iILn4%2B293QcGadDLA6Yj6MBYAuSRQOSPk65uOXV6wL3PaIs0hiyv6K3mOb2rKZmR0lbYhTLzltJRGdu9bbm5dm9wwD73CatJgdeQdvbXCZpdbPA4KNluWHw2vwzB7D9IWRcX1p02gHT"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a4ff222e3b81fdb4-SIN
+alt-svc: h3=":443"; ma=86400
+
+MyFinancialFlow V1.1 Telemetry Endpoint Active. POST technical errors to /report. GET /reports to review.
+```
+
+#### B. Telegram Relay Worker (`financeflow-relay`)
+- **Version ID**: `d48c8e9c-e267-461f-83bb-8ce6f7142ef5`
+- **Waktu Deployment**: `2026-10-25T06:22:33.823Z`
+- **Endpoint**: `https://financeflow-relay.dhikaherlambang.workers.dev`
+
+Eksekusi curl:
+```bash
+curl.exe -i -s https://financeflow-relay.dhikaherlambang.workers.dev
+```
+
+Output Mentah:
+```http
+HTTP/1.1 200 OK
+Date: Sun, 25 Oct 2026 06:23:39 GMT
+Content-Type: text/plain
+Content-Length: 62
+Connection: keep-alive
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Content-Type, X-Telegram-Bot-Api-Secret-Token
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=F5cYT7JTzzi65qhUq1RcLrFIs5Gw5OrfQnk6cl6om%2F2jrqMrJUKhwc0MDC3p%2BQvV8saZSzysVbUexj6rp1BxR7AGprN54jvTCnqSHbyinIcaKP54xCGz8w2wSc5xcqNQEoqBM%2FNIHnikhleHCmyUcvSLQXqvzWtxjDxzlJ84sGs%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: a4ff22413e9dce5d-SIN
+alt-svc: h3=":443"; ma=86400
+
+MyFinancialFlow V1.1 Telegram Relay Active. Awaiting webhooks.
+```
+
+---
+
+## 10. Kesimpulan & Status Akhir
+
+Fase pengembangan **MyFinancialFlow V1.1** beserta pembaruan infrastruktur Cloudflare telah tuntas 100%:
 1. Data transaksi dan akun V1.0 tetap utuh dan langsung aktif di URL produksi tanpa memerlukan aksi migrasi apapun.
 2. Penyimpanan terbuka di Google Drive (`MyFinancialFlow Data/`) dan folder struk (`Receipts/YYYY-MM/`) telah aktif.
 3. Mekanisme anti-manipulasi ringan (*tamper-evidence*) SHA-256 dan segel HMAC Google Account Lock telah berjalan.
 4. Repositori GitHub baru `pranjiunggul/myfinancialflow-v1.1` telah terisi dan terbarui.
 5. Seluruh 28 test suites lulus 100% dengan bukti console log riil lengkap.
+6. Kedua Cloudflare Workers (`financeflow-telemetry` & `financeflow-relay`) telah sukses diredeploy dengan branding resmi `MyFinancialFlow V1.1` dan jalur penyimpanan Google Drive yang konsisten dengan arsitektur folder transparan.
