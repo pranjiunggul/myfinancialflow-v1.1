@@ -1,0 +1,43 @@
+{
+  "name": "myfinancialflow-pwa",
+  "private": true,
+  "version": "1.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "tsx tests/schema-v6-migration.test.ts && tsx tests/schema-v7-migration.test.ts && tsx tests/schema-v8-migration.test.ts && tsx tests/tax-estimator-engine.test.ts && tsx tests/ledger-engine.test.ts && tsx tests/phase2-engine.test.ts && tsx tests/fx-engine.test.ts && tsx tests/phase3-analytics.test.ts && tsx tests/phase4-sync-backup.test.ts && tsx tests/phase5-unified-assistant.test.ts && tsx tests/phase6-telegram-inbox.test.ts && tsx tests/phase7-offline-intelligence.test.ts && tsx tests/phase8-ai-providers-failover.test.ts && tsx tests/ocr-bank-transactions.test.ts && tsx tests/quick-add-flow.test.ts && tsx tests/bulk-history-ocr-confidence.test.ts && tsx tests/telegram-settings.test.ts && tsx tests/sync-enhancements.test.ts && tsx tests/data-quality-analytics.test.ts && tsx tests/ai-caps-chat-history.test.ts && tsx tests/bulk-actions-receipts.test.ts && tsx tests/telemetry-data-wipe.test.ts && tsx tests/telemetry-kv-persistence.test.ts && tsx tests/goals-velocity.test.ts && tsx tests/investment-assets.test.ts && tsx tests/cash-flow-forecast.test.ts && tsx tests/voice-gamification.test.ts && tsx tests/v1_1-visible-drive-tamper-receipts.test.ts",
+    "deploy:pages": "npx wrangler pages deploy dist --project-name financeflow-pwa --branch myfinanceflow",
+    "deploy:worker": "npx wrangler deploy --config worker/wrangler.relay.json",
+    "deploy:telemetry": "npx wrangler deploy --config worker/wrangler.telemetry.json",
+    "deploy": "npm run deploy:pages"
+  },
+  "dependencies": {
+    "chart.js": "^4.6.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "dexie": "^4.0.11",
+    "dexie-react-hooks": "^1.1.7",
+    "lucide-react": "^1.16.0",
+    "react": "^19.0.0",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.2",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "fake-indexeddb": "^6.2.6",
+    "postcss": "^8.5.2",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.15",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vite-plugin-pwa": "^0.21.1"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "financeflow-relay",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-19",
+  "kv_namespaces": [
+    {
+      "binding": "INBOX_KV",
+      "id": "9e0aab7c645946a796df78112345ac04"
+    }
+  ]
+}

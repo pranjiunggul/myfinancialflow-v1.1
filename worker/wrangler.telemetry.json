@@ -1,0 +1,12 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "financeflow-telemetry",
+  "main": "crash-reporter.js",
+  "compatibility_date": "2026-10-19",
+  "kv_namespaces": [
+    {
+      "binding": "CRASH_REPORTS_KV",
+      "id": "9fdb859b934849fda0dcabeba1376f5c"
+    }
+  ]
+}

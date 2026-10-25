@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Production build
+dist/
+dist-ssr/
+
+# Environment and Secrets
+*.local
+.env
+.env.*
+!.env.example
+scrt.txt
+client_secret_*.json
+
+# Vercel and tool artifacts
+.vercel
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
